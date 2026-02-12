@@ -9,5 +9,4 @@
 /vendor/bundle
 Gemfile.lock
 spec_status
-Rakefile
 spec/playwright/node_modules/
