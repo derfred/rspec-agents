@@ -1,0 +1,23 @@
+[
+  {
+    "id": "simple_greeting",
+    "name": "Simple greeting exchange",
+    "goal": "Exchange greetings with the agent",
+    "context": ["First time user", "Wants quick interaction"],
+    "personality": "Friendly and casual"
+  },
+  {
+    "id": "detailed_inquiry",
+    "name": "Detailed information request",
+    "goal": "Get comprehensive information about services",
+    "context": ["Experienced user", "Needs detailed answers"],
+    "personality": "Professional and thorough"
+  },
+  {
+    "id": "urgent_request",
+    "name": "Urgent request handling",
+    "goal": "Get fast response to urgent query",
+    "context": ["Time-sensitive situation", "Deadline pressure"],
+    "personality": "Impatient and direct"
+  }
+]

@@ -1,0 +1,78 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  rspec:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        ruby-version: ['3.3']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Ruby ${{ matrix.ruby-version }}
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true
+    
+    - name: Run RSpec tests
+      run: bundle exec rake spec
+
+  playwright:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+        bundler-cache: true
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'spec/playwright/package-lock.json'
+    
+    - name: Install Playwright dependencies
+      working-directory: spec/playwright
+      run: |
+        npm ci
+        npx playwright install --with-deps
+    
+    - name: Run Playwright tests
+      working-directory: spec/playwright
+      run: npm test
+    
+    - name: Upload Playwright HTML report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: spec/playwright/playwright-report/
+        retention-days: 30
+
+  all-tests:
+    runs-on: ubuntu-latest
+    needs: [rspec, playwright]
+    if: always()
+    
+    steps:
+    - name: Check test results
+      run: |
+        if [ "${{ needs.rspec.result }}" != "success" ] || [ "${{ needs.playwright.result }}" != "success" ]; then
+          echo "Some tests failed"
+          exit 1
+        fi
+        echo "All tests passed!"

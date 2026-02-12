@@ -1,0 +1,238 @@
+!!!
+%html
+  %head
+    %meta{charset: "UTF-8"}
+    %meta{name: "viewport", content: "width=device-width, initial-scale=1.0"}
+    %title RSpec Agents - Test Results
+    != render_base_styles
+    != render_base_scripts
+    != render_extensions(:suite_head_content)
+    != render_extensions(:conversation_head_content)
+    != render_alpine_script
+
+  %body{:"x-data" => ""}
+    != render_extensions(:suite_body_start_content)
+
+    != render_extensions(:render_before_summary)
+
+    #summary-view.summary-view{:"x-bind:class" => "{ 'hidden': $store.suite.view !== 'summary' }"}
+      .summary-header
+        != render_extensions(:render_summary_header)
+        %h1 🧪 RSpec Agents - Test Summary
+        %button.view-toggle-btn{:"@click" => "$store.suite.showDetails()"}
+          📋 View Detailed Results
+
+      - agg = aggregation_data
+      .aggregation-section
+        .aggregation-header
+          %h2 Experiment Summary
+
+        .aggregation-cards
+          .agg-card.completion-card
+            .agg-card-title Completion Rate
+            .agg-card-value= "#{agg[:completion][:rate]}%"
+            .agg-card-detail
+              %span.agg-passed= "#{agg[:completion][:passed]} passed"
+              = " / "
+              %span.agg-failed= "#{agg[:completion][:failed]} failed"
+              - if agg[:completion][:pending] > 0
+                = " / "
+                %span.agg-pending= "#{agg[:completion][:pending]} pending"
+
+          .agg-card.quality-card
+            .agg-card-title Evaluation Rate
+            .agg-card-value= "#{agg[:quality][:rate]}%"
+            .agg-card-detail= "#{agg[:quality][:passed_evals]} / #{agg[:quality][:total_evals]} evaluations passed"
+
+          .agg-card.efficiency-card
+            .agg-card-title Avg Turns
+            .agg-card-value= agg[:efficiency][:avg_turns]
+            .agg-card-detail
+              = "Median: #{agg[:efficiency][:median_turns]}"
+              = " | Range: #{agg[:efficiency][:turn_range]}"
+
+        - if agg[:completion][:failed] > 0
+          .failure-breakdown
+            %h3 Failure Breakdown
+            .breakdown-items
+              - breakdown = agg[:completion][:breakdown]
+              - if breakdown[:assertion] > 0
+                .breakdown-item
+                  %span.breakdown-label Assertion failures:
+                  %span.breakdown-value= breakdown[:assertion]
+              - if breakdown[:max_turns] > 0
+                .breakdown-item
+                  %span.breakdown-label Max turns exceeded:
+                  %span.breakdown-value= breakdown[:max_turns]
+              - if breakdown[:error] > 0
+                .breakdown-item
+                  %span.breakdown-label Errors:
+                  %span.breakdown-value= breakdown[:error]
+
+        - if agg[:quality][:by_criterion].any?
+          .criteria-breakdown
+            %h3 Criteria Performance
+            %table.criteria-table
+              %thead
+                %tr
+                  %th Criterion
+                  %th Evaluated
+                  %th Passed
+                  %th Rate
+              %tbody
+                - agg[:quality][:by_criterion].each do |name, stats|
+                  %tr
+                    %td.criterion-name-cell= name
+                    %td.criterion-num-cell= stats[:evaluated]
+                    %td.criterion-num-cell= stats[:passed]
+                    %td.criterion-rate-cell
+                      .rate-bar-container
+                        .rate-bar
+                          .rate-fill{style: "width: #{stats[:rate]}%", class: stats[:rate] >= 80 ? 'good' : (stats[:rate] >= 50 ? 'warning' : 'poor')}
+                        %span.rate-text= "#{stats[:rate]}%"
+
+        - if agg[:scenarios].any?
+          .scenarios-breakdown
+            %h3 Scenario Sets
+            .scenario-cards
+              - agg[:scenarios].each do |scenario|
+                .scenario-card{class: scenario[:passed] == scenario[:total] ? 'all-passed' : (scenario[:passed] == 0 ? 'all-failed' : 'partial')}
+                  .scenario-name= scenario[:name]
+                  .scenario-stats
+                    .scenario-progress
+                      .scenario-progress-bar
+                        .scenario-progress-fill{style: "width: #{scenario[:rate]}%"}
+                    %span.scenario-count= "#{scenario[:passed]}/#{scenario[:total]}"
+                    %span.scenario-rate= "(#{scenario[:rate]}%)"
+
+      .summary-content
+        - summary = summary_data
+        %table.summary-table
+          %thead
+            %tr
+              %th.col-description Test Description
+              %th.col-status Status
+              %th.col-duration Duration
+              - if summary[:rows].any? { |row| row[:has_generic_error] }
+                %th.col-error Generic Error
+              - summary[:criterion_names].each do |criterion_name|
+                %th.col-criterion{title: criterion_name}= criterion_name
+          %tbody
+            - summary[:rows].each do |row|
+              %tr.summary-row{data: {example: row[:id]}, :"@click" => "$store.suite.navigateToExample('#{row[:id]}')"}
+                %td.cell-description= row[:description]
+                %td.cell-status
+                  %span.status-badge{class: row[:status]}= row[:status]
+                %td.cell-duration= "#{(row[:duration] * 1000).round}ms"
+                - if summary[:rows].any? { |r| r[:has_generic_error] }
+                  %td.cell-error
+                    - if row[:has_generic_error]
+                      - error_msg = row[:exception_summary] || "Test failed with an exception"
+                      %span.icon-error{title: error_msg} ⚠
+                    - else
+                      %span.icon-na —
+                - summary[:criterion_names].each do |criterion_name|
+                  %td.cell-criterion
+                    - if row[:criterion_map].key?(criterion_name)
+                      - criterion_data = row[:criterion_map][criterion_name]
+                      - if criterion_data[:satisfied]
+                        %span.icon-pass{title: criterion_data[:reasoning] || "Criterion satisfied"} ✓
+                      - else
+                        %span.icon-fail{title: criterion_data[:reasoning] || "Criterion not satisfied"} ✗
+                    - else
+                      %span.icon-na{title: "Not evaluated for this test"} —
+
+    != render_extensions(:render_after_summary)
+
+    #details-view.details-view{:"x-bind:class" => "{ 'active': $store.suite.view === 'details' }"}
+      .container
+        .sidebar
+          .sidebar-header
+            %h1 🧪 RSpec Agents
+            %button.view-toggle-btn.sidebar-toggle{:"@click" => "$store.suite.showSummary()"}
+              📊 View Summary
+          %ul.example-list
+            - examples.each do |example|
+              %li.example-item{data: {example: example[:id]}, :"@click" => "$store.suite.showExample('#{example[:id]}')", :"x-bind:class" => "{ 'active': $store.suite.activeExampleId === '#{example[:id]}' }"}
+                %span.example-status{class: example[:status]}
+                .example-description= example[:description]
+                .example-duration= "#{(example[:duration] * 1000).round}ms"
+
+        .main-content{:"x-bind:class" => "{ 'metadata-open': $store.suite.metadataVisible }"}
+          - examples.each do |example|
+            != render_extensions(:render_before_example, example)
+
+            .example-content{id: example[:id], "data-example": example.to_json, :"x-bind:class" => "{ 'active': $store.suite.activeExampleId === '#{example[:id]}' }"}
+              != render_extensions(:render_example_header, example)
+
+              .content-header
+                %h2
+                  = example[:description]
+
+                .content-info
+                  %span Status:
+                  %strong{class: example[:status]}= example[:status]
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  %span Duration:
+                  %strong= "#{(example[:duration] * 1000).round}ms"
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  %button.copy-json-btn{:"@click" => "$store.suite.copyExampleJson($el)", title: "Copy example JSON to clipboard"}
+                    📋 Copy JSON
+
+                - if example[:criterion_results] && !example[:criterion_results].empty?
+                  .criteria-section{class: example[:status]}
+                    .criteria-header
+                      %span.criteria-title Criteria Evaluation
+                    .criteria-list
+                      - example[:criterion_results].each_with_index do |criterion, idx|
+                        - criterion_id = "#{example[:id]}_criterion_#{idx}"
+                        .criterion-item.expandable-item{class: criterion[:satisfied] ? 'satisfied' : 'failed', :"x-bind:class" => "{ 'expanded': $store.expandable.isExpanded('#{criterion_id}') }"}
+                          .criterion-header.expandable-header{:"@click" => "$store.expandable.toggle('#{criterion_id}')"}
+                            %span.expandable-toggle ▶
+                            %span.criterion-badge{class: criterion[:satisfied] ? 'satisfied' : 'failed'}
+                              = criterion[:satisfied] ? '✓' : '✗'
+                            %span.criterion-name= criterion[:name]
+                            - if criterion[:description] && criterion[:description] != criterion[:name]
+                              %span.criterion-description= " - #{criterion[:description]}"
+                          .criterion-reasoning.expandable-content{:"x-show" => "$store.expandable.isExpanded('#{criterion_id}')"}
+                            .criterion-reasoning-content= criterion[:reasoning]
+
+              .conversation-container
+                - if example[:exception]
+                  .exception-panel
+                    .exception-header ❌ Exception
+                    .exception-message
+                      %strong= example[:exception][:class]
+                      = ": #{example[:exception][:message]}"
+                    - if example[:exception][:backtrace]
+                      .exception-backtrace
+                        - example[:exception][:backtrace].each do |line|
+                          %div= line
+
+                != render_conversation(example)
+
+            != render_extensions(:render_after_example, example)
+
+    #metadata-sidebar.metadata-sidebar{:"x-bind:class" => "{ 'visible': $store.suite.metadataVisible }"}
+      .metadata-sidebar-header
+        %h3#metadata-header{:"x-text" => "$store.suite.metadataRole || 'Message Metadata'"} Message Metadata
+        %button.metadata-close-btn{:"@click" => "$store.suite.closeMetadata()", title: "Close"}
+          ×
+      .metadata-sidebar-content#metadata-content
+        - examples.each do |example|
+          - example[:messages].each_with_index do |message, idx|
+            - message_id = "#{example[:id]}_msg_#{idx}"
+            .metadata-item{id: "#{message_id}_metadata", data: {role: message[:role]}, :"x-show" => "$store.suite.metadataMessageId === '#{message_id}'"}
+              != render_extensions(:render_message_metadata, message, message_id)
+
+    -# Modal (Alpine-driven)
+    .modal{:"x-show" => "$store.modal.visible", :"x-bind:class" => "{ 'visible': $store.modal.visible }", :"@click.self" => "$store.modal.close()"}
+      .modal-content
+        .modal-header
+          %h3.modal-title{:"x-text" => "$store.modal.title"}
+          %button.modal-close{:"@click" => "$store.modal.close()"} &times;
+        .modal-body
+          %pre.modal-text{:"x-text" => "$store.modal.content"}
+
+    != render_extensions(:conversation_body_end_content)
+    != render_extensions(:suite_body_end_content)

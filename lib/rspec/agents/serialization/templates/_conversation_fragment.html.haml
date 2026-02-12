@@ -1,0 +1,34 @@
+-# Conversation fragment template - renders messages without document wrapper
+-# Variables available: messages, example_id
+
+.conversation{"data-example-id": example_id}
+  - if messages.empty?
+    .empty-state
+      .empty-state-icon
+      %p No conversation recorded
+
+  - messages.each_with_index do |message, idx|
+    - message_id = "#{example_id}_msg_#{idx}"
+
+    != render_extensions(:render_before_message, message, message_id)
+
+    - msg_classes = collect_message_classes(message, message_id)
+    - xbind_expr = msg_classes.map { |cls, expr| "'#{cls}': #{expr}" }.join(", ")
+    .message{class: message[:role], "data-message-index": idx, :"x-bind:class" => "{ #{xbind_expr} }"}
+      .message-header
+        = message[:role].capitalize
+        - if message[:timestamp]
+          = " \u2022 #{message[:timestamp].strftime('%H:%M:%S')}"
+
+      != render_extensions(:render_message_attachment, message, message_id)
+
+      - if message[:content] && !message[:content].empty?
+        .message-bubble-wrapper
+          .message-bubble
+            .message-content= message[:content]
+
+            %span.metadata-toggle{:"@click" => "$store.suite.showMetadata('#{message_id}', '#{message[:role]}')"}
+              \u25B6 Show metadata
+          != render_extensions(:render_message_bubble_actions, message, message_id)
+
+    != render_extensions(:render_after_message, message, message_id)

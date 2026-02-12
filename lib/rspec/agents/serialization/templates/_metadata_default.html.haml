@@ -1,0 +1,17 @@
+-# Default metadata template for RSpec Agents
+-# Variables available: message (hash with :timestamp, :metadata, :tool_calls)
+
+- if message[:timestamp]
+  .metadata-section
+    .metadata-label Timestamp
+    .metadata-value= message[:timestamp].iso8601
+
+- if message[:metadata] && !message[:metadata].empty?
+  .metadata-section
+    .metadata-label Metadata
+    .metadata-value= JSON.pretty_generate(message[:metadata])
+
+- if message[:tool_calls] && !message[:tool_calls].empty?
+  .metadata-section
+    .metadata-label Tool Calls
+    .metadata-value= JSON.pretty_generate(message[:tool_calls])

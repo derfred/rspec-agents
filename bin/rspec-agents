@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Unified CLI for rspec-agents
+#
+# Usage:
+#   rspec-agents [run] [options] [paths...]     # Single-process (default)
+#   rspec-agents parallel [options] [paths...]  # Parallel with workers
+#   rspec-agents render <json_file> [options]   # Render HTML from JSON
+#   rspec-agents worker                         # Internal: worker mode
+
+# macOS fork safety - must be set before any Objective-C code loads
+ENV["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+
+# Sync output streams for worker mode
+$stdout.sync = true
+$stderr.sync = true
+
+require "rspec/agents"
+require "rspec/agents/cli"
+
+# Run CLI
+exit_code = RSpec::Agents::CLI.run(ARGV)
+exit(exit_code || 0)

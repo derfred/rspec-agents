@@ -1,0 +1,196 @@
+/* Base reusable components for RSpec Agents templates */
+
+/* Badges */
+.badge {
+  background: #3498db;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* Expandable/Collapsible Sections */
+.expandable-list {
+  margin-top: 12px;
+}
+
+.expandable-item {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.expandable-header {
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.expandable-header:hover {
+  background: #e9ecef;
+}
+
+.expand-toggle {
+  transition: transform 0.2s;
+  font-size: 10px;
+}
+
+.expandable-item.expanded .expand-toggle {
+  transform: rotate(90deg);
+}
+
+.expandable-content {
+  padding: 12px;
+  border-top: 1px solid #dee2e6;
+  display: none;
+}
+
+.expandable-item.expanded .expandable-content {
+  display: block;
+}
+
+.expandable-title {
+  font-weight: 600;
+  flex: 1;
+}
+
+/* Generic Modal System */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.visible {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  max-width: 800px;
+  max-height: 80vh;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Field Sections (for expandable content) */
+.field {
+  margin-bottom: 12px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.field-value {
+  background: white;
+  padding: 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.field-value.abbreviated {
+  color: #6c757d;
+}
+
+/* Action Buttons */
+.action-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.action-btn:hover {
+  background: #0056b3;
+}
+
+.action-btn.secondary {
+  background: #6c757d;
+}
+
+.action-btn.secondary:hover {
+  background: #5a6268;
+}
+
+.action-btn.success {
+  background: #28a745;
+}
+
+.action-btn.success:hover {
+  background: #218838;
+}
