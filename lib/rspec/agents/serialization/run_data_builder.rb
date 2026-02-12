@@ -24,7 +24,12 @@ module RSpec
             # Only create RunData once - ignore subsequent SuiteStarted events
             return if @run_data
 
-            @run_data = RunData.new(run_id: SecureRandom.uuid, started_at: event.time, seed: event.seed)
+            @run_data = RunData.new(
+              run_id: SecureRandom.uuid,
+              started_at: event.time,
+              seed: event.seed,
+              git_commit: GitHelpers.current_commit
+            )
           end
         end
 

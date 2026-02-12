@@ -301,11 +301,12 @@ module RSpec
         include SerializationHelpers
         extend DataClassFromH
 
-        attr_reader :run_id, :started_at, :seed, :examples, :scenarios
+        attr_reader :run_id, :started_at, :seed, :examples, :scenarios, :git_commit
         attr_accessor :finished_at
 
-        def initialize(run_id:, started_at:, finished_at: nil, seed: nil, examples: {}, scenarios: {})
+        def initialize(run_id:, started_at:, finished_at: nil, seed: nil, git_commit: nil, examples: {}, scenarios: {})
           @run_id, @started_at, @finished_at, @seed = run_id, started_at, finished_at, seed
+          @git_commit = git_commit
           @examples = examples || {}
           @scenarios = scenarios || {}
         end
@@ -341,15 +342,39 @@ module RSpec
 
         def to_h
           { run_id: @run_id, started_at: serialize_value(@started_at), finished_at: serialize_value(@finished_at),
-            seed: @seed, scenarios: @scenarios.transform_values(&:to_h), examples: @examples.transform_values(&:to_h) }
+            seed: @seed, git_commit: @git_commit, scenarios: @scenarios.transform_values(&:to_h), examples: @examples.transform_values(&:to_h) }
         end
 
         def self.from_h(hash)
           return nil unless hash
           new(run_id: get(hash, :run_id), started_at: parse_time(get(hash, :started_at)),
               finished_at: parse_time(get(hash, :finished_at)), seed: get(hash, :seed),
+              git_commit: get(hash, :git_commit),
               scenarios: (get(hash, :scenarios) || {}).transform_values { |s| ScenarioData.from_h(s) },
               examples: (get(hash, :examples) || {}).transform_values { |e| ExampleData.from_h(e) })
+        end
+      end
+
+      # =========================================================================
+      # Git utilities
+      # =========================================================================
+
+      module GitHelpers
+        # Detects the current git commit SHA if run from a git repository
+        # @return [String, nil] The commit SHA or nil if not in a git repo
+        def self.current_commit
+          return nil unless File.directory?(".git") || in_git_worktree?
+          `git rev-parse HEAD 2>/dev/null`.strip.tap { |sha| return nil if sha.empty? }
+        rescue => e
+          nil
+        end
+
+        private
+
+        def self.in_git_worktree?
+          `git rev-parse --is-inside-work-tree 2>/dev/null`.strip == "true"
+        rescue => e
+          false
         end
       end
 
