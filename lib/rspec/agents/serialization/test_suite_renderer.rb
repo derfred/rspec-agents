@@ -6,6 +6,7 @@ require_relative "presenters"
 require_relative "conversation_renderer"
 require_relative "run_data_aggregator"
 require_relative "extensions/core_extension"
+require_relative "extensions/copy_example_json_extension"
 
 module RSpec
   module Agents
@@ -165,7 +166,8 @@ module RSpec
 
         def default_extensions
           [
-            Extensions::CoreExtension
+            Extensions::CoreExtension,
+            Extensions::CopyExampleJsonExtension
           ]
         end
 
