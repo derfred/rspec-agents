@@ -91,16 +91,17 @@ module RSpec
         options = parse_single_options(args)
 
         runner = Runners::TerminalRunner.new(
-          output:    $stdout,
-          color:     options[:color],
-          json_path: options[:json_path],
-          html_path: options[:html_path]
+          output:     $stdout,
+          color:      options[:color],
+          json_path:  options[:json_path],
+          html_path:  options[:html_path],
+          upload_url: options[:upload_url]
         )
         runner.run(options[:paths])
       end
 
       def parse_single_options(args)
-        options = { paths: [], color: nil, json_path: nil, html_path: nil }
+        options = { paths: [], color: nil, json_path: nil, html_path: nil, upload_url: nil }
 
         parser = OptionParser.new do |opts|
           opts.banner = "Usage: rspec-agents [run] [options] [paths...]"
@@ -124,6 +125,10 @@ module RSpec
 
           opts.on("--html PATH", "Render HTML report to path") do |path|
             options[:html_path] = path
+          end
+
+          opts.on("--upload [URL]", "Upload run data to agents-studio (default: http://localhost:9292)") do |url|
+            options[:upload_url] = url || "http://localhost:9292"
           end
 
           opts.on("-h", "--help", "Show this help") do
@@ -151,20 +156,22 @@ module RSpec
           color:        options[:color],
           json_path:    options[:json_path],
           html_path:    options[:html_path],
-          ui_mode:      options[:ui_mode]
+          ui_mode:      options[:ui_mode],
+          upload_url:   options[:upload_url]
         )
         runner.run(options[:paths])
       end
 
       def parse_parallel_options(args)
         options = {
-          workers:   4,
-          fail_fast: false,
-          paths:     [],
-          color:     nil,
-          json_path: nil,
-          html_path: nil,
-          ui_mode:   nil
+          workers:    4,
+          fail_fast:  false,
+          paths:      [],
+          color:      nil,
+          json_path:  nil,
+          html_path:  nil,
+          ui_mode:    nil,
+          upload_url: nil
         }
 
         parser = OptionParser.new do |opts|
@@ -197,6 +204,10 @@ module RSpec
 
           opts.on("--html PATH", "Render HTML report to path") do |path|
             options[:html_path] = path
+          end
+
+          opts.on("--upload [URL]", "Upload run data to agents-studio (default: http://localhost:9292)") do |url|
+            options[:upload_url] = url || "http://localhost:9292"
           end
 
           opts.on("-h", "--help", "Show this help") do

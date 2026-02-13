@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require_relative "run_data_uploader"
 
 module RSpec
   module Agents
@@ -21,12 +22,13 @@ module RSpec
         # @param color [Boolean] Whether to use ANSI colors (default: true if TTY)
         # @param json_path [String, nil] Path to save JSON run data
         # @param html_path [String, nil] Path to save HTML report
-        def initialize(output: $stdout, color: nil, json_path: nil, html_path: nil)
+        def initialize(output: $stdout, color: nil, json_path: nil, html_path: nil, upload_url: nil)
           @output = output
           @color = color.nil? ? output.respond_to?(:tty?) && output.tty? : color
           @indent = 0
           @json_path = json_path
           @html_path = html_path
+          @upload_url = upload_url
 
           # Set up terminal observer for conversation display
           @event_bus = EventBus.instance
@@ -52,7 +54,7 @@ module RSpec
           result = executor.execute(Array(files_or_args))
 
           # Save outputs after run completes
-          save_outputs(executor.run_data) if @json_path || @html_path
+          save_outputs(executor.run_data) if @json_path || @html_path || @upload_url
 
           result.success? ? 0 : 1
         end
@@ -178,6 +180,10 @@ module RSpec
 
           if @html_path
             Serialization::TestSuiteRenderer.render(run_data, output_path: @html_path)
+          end
+
+          if @upload_url
+            RunDataUploader.new(url: @upload_url, output: @output).upload(run_data)
           end
         end
       end

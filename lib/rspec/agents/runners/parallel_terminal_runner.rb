@@ -3,6 +3,7 @@
 require "async"
 require "fileutils"
 require_relative "../parallel/ui/ui_factory"
+require_relative "run_data_uploader"
 
 module RSpec
   module Agents
@@ -43,7 +44,7 @@ module RSpec
         # @param html_path [String, nil] Path to save HTML report
         # @param ui_mode [Symbol, nil] Output mode (:interactive, :interleaved, :quiet)
         def initialize(worker_count:, fail_fast: false, output: $stdout, color: nil,
-                       json_path: nil, html_path: nil, ui_mode: nil)
+                       json_path: nil, html_path: nil, ui_mode: nil, upload_url: nil)
           @worker_count = worker_count
           @fail_fast = fail_fast
           @output = output
@@ -51,6 +52,7 @@ module RSpec
           @mutex = Mutex.new
           @json_path = json_path
           @html_path = html_path
+          @upload_url = upload_url
 
           @ui = Parallel::UI::UIFactory.create(
             mode:   ui_mode,
@@ -113,7 +115,7 @@ module RSpec
             end
 
             # Save outputs
-            save_outputs(executor.run_data) if @json_path || @html_path
+            save_outputs(executor.run_data) if @json_path || @html_path || @upload_url
 
             result&.success? ? 0 : 1
           ensure
@@ -212,6 +214,10 @@ module RSpec
 
           if @html_path
             Serialization::TestSuiteRenderer.render(run_data, output_path: @html_path)
+          end
+
+          if @upload_url
+            RunDataUploader.new(url: @upload_url, output: @output).upload(run_data)
           end
         end
       end
