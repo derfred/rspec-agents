@@ -28,7 +28,7 @@
             .message-content= message[:content]
 
             %span.metadata-toggle{:"@click" => "$store.suite.showMetadata('#{message_id}', '#{message[:role]}')"}
-              \u25B6 Show metadata
+              ▶ Show metadata
           != render_extensions(:render_message_bubble_actions, message, message_id)
 
     != render_extensions(:render_after_message, message, message_id)
