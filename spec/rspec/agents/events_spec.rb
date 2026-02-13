@@ -52,6 +52,7 @@ RSpec.describe RSpec::Agents::Events do
         turn_number: 1,
         text:        "I found some venues for you",
         tool_calls:  tool_calls,
+        metadata:    {},
         time:        time
       )
 
@@ -68,6 +69,7 @@ RSpec.describe RSpec::Agents::Events do
         turn_number: 1,
         text:        "Hello!",
         tool_calls:  [],
+        metadata:    {},
         time:        time
       )
 
@@ -118,11 +120,13 @@ RSpec.describe RSpec::Agents::Events do
       event = described_class.new(
         example_count: 42,
         load_time:     1.5,
+        seed:          12345,
         time:          time
       )
 
       expect(event.example_count).to eq(42)
       expect(event.load_time).to eq(1.5)
+      expect(event.seed).to eq(12345)
       expect(event.time).to eq(time)
     end
   end
@@ -146,16 +150,22 @@ RSpec.describe RSpec::Agents::Events do
     it "creates an event with all required fields" do
       event = described_class.new(
         example_id:       "abc123",
+        stable_id:        "stable_abc123",
+        canonical_path:   "MyClass > does something",
         description:      "does something",
         full_description: "MyClass does something",
         location:         "spec/my_class_spec.rb:10",
+        scenario:         nil,
         time:             time
       )
 
       expect(event.example_id).to eq("abc123")
+      expect(event.stable_id).to eq("stable_abc123")
+      expect(event.canonical_path).to eq("MyClass > does something")
       expect(event.description).to eq("does something")
       expect(event.full_description).to eq("MyClass does something")
       expect(event.location).to eq("spec/my_class_spec.rb:10")
+      expect(event.scenario).to be_nil
     end
   end
 
@@ -163,16 +173,21 @@ RSpec.describe RSpec::Agents::Events do
     it "creates an event with all required fields" do
       event = described_class.new(
         example_id:       "abc123",
+        stable_id:        "stable_abc123",
         description:      "fails",
         full_description: "MyClass fails",
+        location:         "spec/my_class_spec.rb:15",
         duration:         0.5,
         message:          "Expected true, got false",
         backtrace:        ["spec/my_class_spec.rb:15"],
         time:             time
       )
 
+      expect(event.example_id).to eq("abc123")
+      expect(event.stable_id).to eq("stable_abc123")
       expect(event.message).to eq("Expected true, got false")
       expect(event.backtrace).to eq(["spec/my_class_spec.rb:15"])
+      expect(event.location).to eq("spec/my_class_spec.rb:15")
       expect(event.duration).to eq(0.5)
     end
   end

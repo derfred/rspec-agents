@@ -84,7 +84,7 @@ module RSpec
               end
             end
           rescue Parallel::ExampleDiscovery::DiscoveryError => e
-            @output.puts colorize("Error: #{e.message}", :red)
+            @output.puts colorize("Example discovery failed: #{e.message}", :red)
             return 1
           end
 

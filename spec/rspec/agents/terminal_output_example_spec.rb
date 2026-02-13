@@ -1,13 +1,9 @@
 require "spec_helper"
-require "rspec/agents"
-
-# Ensure DSL is available
-RSpec::Agents.setup_rspec!
 
 # Example spec to validate TerminalRunner output with conversation events
-# Run with: bin/rspec-agents-terminal spec/rspec_agents/terminal_output_example_spec.rb
+# Run with: RAILS_ENV=development bin/rspec-agents spec/rspec/agents/terminal_output_example_spec.rb
 
-RSpec.describe "Terminal Output Example", type: :agent_simulator do
+RSpec.describe "Terminal Output Example", type: :agent do
   # Mock agent that echoes back with some variation
   class EchoAgent < RSpec::Agents::Agents::Base
     def self.build(context = {})

@@ -251,6 +251,7 @@ RSpec.describe RSpec::Agents::Observers::TerminalObserver do
         turn_number: 1,
         text:        "How can I help you?",
         tool_calls:  [],
+        metadata:    {},
         time:        time
       )
 
@@ -266,6 +267,7 @@ RSpec.describe RSpec::Agents::Observers::TerminalObserver do
         turn_number: 1,
         text:        "Found some results",
         tool_calls:  [{ name: :search }, { name: :filter }],
+        metadata:    {},
         time:        time
       )
 
@@ -280,6 +282,7 @@ RSpec.describe RSpec::Agents::Observers::TerminalObserver do
         turn_number: 1,
         text:        "Hello!",
         tool_calls:  [],
+        metadata:    {},
         time:        time
       )
 

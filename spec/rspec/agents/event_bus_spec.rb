@@ -45,6 +45,7 @@ RSpec.describe RSpec::Agents::EventBus do
         turn_number: 1,
         text:        "Hi there!",
         tool_calls:  [],
+        metadata:    {},
         time:        Time.now
       )
 
@@ -157,6 +158,7 @@ RSpec.describe RSpec::Agents::EventBus do
         turn_number: 1,
         text:        "Hi!",
         tool_calls:  [],
+        metadata:    {},
         time:        Time.now
       )
 
@@ -188,6 +190,7 @@ RSpec.describe RSpec::Agents::EventBus do
         turn_number: 1,
         text:        "Hi!",
         tool_calls:  [],
+        metadata:    {},
         time:        Time.now
       )
 
