@@ -55,6 +55,10 @@ module RSpec
           #     end
           #   end
           def scenario_set(name, from: nil, scenarios: nil, &block)
+            # Capture the caller location so examples get the correct source location
+            # instead of pointing to this DSL file
+            scenario_set_caller = caller
+
             # Validate arguments - must provide either from: or scenarios:, but not both
             if from.nil? && scenarios.nil?
               raise RSpec::Core::ExampleGroup::WrongScopeError,
@@ -91,6 +95,10 @@ module RSpec
                 define_singleton_method(:it) do |description = nil, *test_args, **metadata, &test_block|
                   # Add scenario to metadata
                   metadata[:rspec_agents_scenario] = captured_scenario
+
+                  # Pass the caller from scenario_set so RSpec captures the correct
+                  # source location (the spec file) instead of this DSL file
+                  metadata[:caller] = scenario_set_caller
 
                   # Create a wrapped test block that sets the instance variable
                   wrapped_test_block = proc do

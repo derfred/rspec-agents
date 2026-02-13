@@ -20,6 +20,7 @@ module RSpec
       #   EventBus           → RpcNotifyObserver → JSON over RPC socket
       #
       class HeadlessRunner
+        include BacktraceHelper
         # RSpec notifications we subscribe to
         NOTIFICATIONS = [
           :start,
@@ -241,31 +242,6 @@ module RSpec
           nil
         end
 
-        def extract_failure_message(notification)
-          if notification.respond_to?(:exception) && notification.exception
-            notification.exception.message
-          elsif notification.example.execution_result.exception
-            notification.example.execution_result.exception.message
-          end
-        end
-
-        def extract_backtrace(notification)
-          backtrace = if notification.respond_to?(:formatted_backtrace)
-                        notification.formatted_backtrace
-                      elsif notification.example.execution_result.exception
-                        notification.example.execution_result.exception.backtrace
-                      end
-          filter_backtrace(backtrace)
-        end
-
-        def filter_backtrace(backtrace)
-          return nil unless backtrace
-
-          # Include only lines from the current working directory (application code)
-          # This matches RSpec's backtrace_inclusion_patterns approach
-          app_path = Dir.getwd
-          backtrace.select { |line| line.start_with?(app_path) }.first(10)
-        end
       end
     end
   end

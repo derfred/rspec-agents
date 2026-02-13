@@ -69,6 +69,11 @@ module RSpec
                     @output.puts "#{prefix}     #{colorize(line.chomp, :red)}"
                   end
                 end
+                if event.backtrace&.any?
+                  event.backtrace.first(3).each do |line|
+                    @output.puts "#{prefix}     #{colorize(line, :dim)}"
+                  end
+                end
 
               when Events::ExamplePending
                 message = event.message ? " (#{event.message})" : ""

@@ -160,6 +160,11 @@ module RSpec
                     append_to_buffer(worker, "    #{colorize(line.chomp, :red)}")
                   end
                 end
+                if event.backtrace&.any?
+                  event.backtrace.first(3).each do |line|
+                    append_to_buffer(worker, "    #{colorize(line, :dim)}")
+                  end
+                end
 
               when Events::ExamplePending
                 @worker_status[worker] = :pending

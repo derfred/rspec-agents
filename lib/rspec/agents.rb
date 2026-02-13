@@ -54,6 +54,9 @@ require_relative "agents/observers/parallel_terminal_observer"
 require_relative "agents/turn_executor"
 require_relative "agents/runners/user_simulator"
 
+# Shared helpers
+require_relative "agents/backtrace_helper"
+
 # Spec Executor (unified execution engine)
 require_relative "agents/spec_executor"
 

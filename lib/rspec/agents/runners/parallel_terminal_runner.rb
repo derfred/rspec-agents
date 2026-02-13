@@ -192,7 +192,7 @@ module RSpec
           failures.each do |event|
             location = event.location
             description = event.full_description || event.description
-            @output.puts colorize("bin/rspec-agents #{location}", :red) + " " + colorize("# #{description}", :dim)
+            @output.puts colorize("rspec-agents #{location}", :red) + " " + colorize("# #{description}", :dim)
           end
           @output.puts
         end
