@@ -200,9 +200,12 @@ RSpec.describe RSpec::Agents::Events do
     it "reconstructs ExampleStarted from hash" do
       payload = {
         example_id:       "abc123",
+        stable_id:        "stable_abc123",
+        canonical_path:   "MyClass > does something",
         description:      "does something",
         full_description: "MyClass does something",
         location:         "spec/my_spec.rb:10",
+        scenario:         nil,
         time:             time
       }
 
@@ -231,9 +234,12 @@ RSpec.describe RSpec::Agents::Events do
     it "handles string keys in payload" do
       payload = {
         "example_id"       => "abc123",
+        "stable_id"        => "stable_abc123",
+        "canonical_path"   => "test",
         "description"      => "test",
         "full_description" => "full test",
         "location"         => "spec/test.rb:1",
+        "scenario"         => nil,
         "time"             => time
       }
 
@@ -251,9 +257,12 @@ RSpec.describe RSpec::Agents::Events do
     it "filters out extra payload keys" do
       payload = {
         example_id:       "abc123",
+        stable_id:        "stable_abc123",
+        canonical_path:   "test",
         description:      "test",
         full_description: "full test",
         location:         "spec/test.rb:1",
+        scenario:         nil,
         time:             time,
         extra_field:      "should be ignored"
       }

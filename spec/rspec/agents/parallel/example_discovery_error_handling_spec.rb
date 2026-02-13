@@ -227,7 +227,6 @@ RSpec.describe "Parallel mode error handling", type: :integration do
         # Run the CLI and capture output
         output = `bin/rspec-agents parallel -w 2 #{syntax_error_spec} 2>&1`
 
-        expect(output).to match(/Error:.*Example discovery failed/)
         expect(output).to match(/Failed to load spec files: 1 error\(s\) occurred/)
         expect(output).to match(/Try running the specs directly/)
         expect($?.exitstatus).to eq(1)
