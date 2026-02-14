@@ -260,40 +260,48 @@ module RSpec
         extend DataClassFromH
 
         attr_reader :id, :stable_id, :canonical_path, :file, :description, :location, :started_at, :evaluations, :metadata
-        attr_accessor :status, :finished_at, :duration_ms, :exception, :conversation, :scenario_id
+        attr_accessor :status, :finished_at, :duration_ms, :exception, :conversation, :scenario_id, :rendered_extensions
 
         def initialize(id:, file:, description:, location:, started_at:, status: :pending,
                        stable_id: nil, canonical_path: nil, scenario_id: nil,
-                       finished_at: nil, duration_ms: nil, exception: nil, conversation: nil, evaluations: [], metadata: {})
+                       finished_at: nil, duration_ms: nil, exception: nil, conversation: nil,
+                       evaluations: [], metadata: {}, rendered_extensions: nil)
           @id, @file, @description, @location = id, file, description, location
           @stable_id, @canonical_path = stable_id, canonical_path
           @scenario_id = scenario_id
           @status, @started_at, @finished_at, @duration_ms = status.to_sym, started_at, finished_at, duration_ms
           @exception, @conversation, @evaluations = exception, conversation, evaluations || []
           @metadata = wrap_metadata(metadata)
+          @rendered_extensions = rendered_extensions
         end
 
         def add_evaluation(evaluation) = @evaluations << evaluation
 
         def to_h
-          { id: @id, stable_id: @stable_id, canonical_path: @canonical_path, scenario_id: @scenario_id,
-            file: @file, description: @description, location: @location, status: @status.to_s,
-            started_at: serialize_value(@started_at), finished_at: serialize_value(@finished_at),
-            duration_ms: @duration_ms, exception: @exception&.to_h, conversation: @conversation&.to_h,
-            evaluations: @evaluations.map(&:to_h), metadata: @metadata.to_h }
+          h = { id: @id, stable_id: @stable_id, canonical_path: @canonical_path, scenario_id: @scenario_id,
+                file: @file, description: @description, location: @location, status: @status.to_s,
+                started_at: serialize_value(@started_at), finished_at: serialize_value(@finished_at),
+                duration_ms: @duration_ms, exception: @exception&.to_h, conversation: @conversation&.to_h,
+                evaluations: @evaluations.map(&:to_h), metadata: @metadata.to_h }
+          h[:rendered_extensions] = @rendered_extensions if @rendered_extensions
+          h
         end
 
         def self.from_h(hash)
           return nil unless hash
-          new(id: get(hash, :id), stable_id: get(hash, :stable_id), canonical_path: get(hash, :canonical_path),
-              scenario_id: get(hash, :scenario_id),
-              file: get(hash, :file), description: get(hash, :description),
-              location: get(hash, :location), status: get(hash, :status)&.to_sym || :pending,
-              started_at: parse_time(get(hash, :started_at)), finished_at: parse_time(get(hash, :finished_at)),
-              duration_ms: get(hash, :duration_ms), exception: ExceptionData.from_h(get(hash, :exception)),
-              conversation: ConversationData.from_h(get(hash, :conversation)),
-              evaluations: get_array(hash, :evaluations).map { |e| EvaluationData.from_h(e) },
-              metadata: get(hash, :metadata) || {})
+          example = new(
+            id: get(hash, :id), stable_id: get(hash, :stable_id), canonical_path: get(hash, :canonical_path),
+            scenario_id: get(hash, :scenario_id),
+            file: get(hash, :file), description: get(hash, :description),
+            location: get(hash, :location), status: get(hash, :status)&.to_sym || :pending,
+            started_at: parse_time(get(hash, :started_at)), finished_at: parse_time(get(hash, :finished_at)),
+            duration_ms: get(hash, :duration_ms), exception: ExceptionData.from_h(get(hash, :exception)),
+            conversation: ConversationData.from_h(get(hash, :conversation)),
+            evaluations: get_array(hash, :evaluations).map { |e| EvaluationData.from_h(e) },
+            metadata: get(hash, :metadata) || {}
+          )
+          example.rendered_extensions = get(hash, :rendered_extensions)
+          example
         end
       end
 

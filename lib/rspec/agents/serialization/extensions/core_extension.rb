@@ -11,7 +11,7 @@ module RSpec
         # Includes:
         # - Base styles (`_styles.css`)
         # - Base scripts (`_scripts.js`)
-        # - Metadata rendering (`_metadata_default.html.haml`)
+        # - Metadata rendering via IR (timestamp, metadata, tool calls)
         #
         # This extension runs first (priority 0) to provide base functionality
         # that other extensions can build upon.
@@ -39,8 +39,24 @@ module RSpec
             content.join("\n")
           end
 
+          # Render message metadata as IR nodes.
+          # Returns an Array of IR node hashes (not HTML).
+          #
+          # @param message [MessagePresenter] the message
+          # @param message_id [String] unique identifier
+          # @return [Array<Hash>, nil] IR nodes or nil if nothing to render
           def render_message_metadata(message, message_id)
-            render_template("_metadata_default.html.haml", message: message, message_id: message_id)
+            build_ir do
+              timestamp(message[:timestamp]) if message[:timestamp]
+
+              if message[:metadata] && !message[:metadata].empty?
+                section("Metadata", value: JSON.pretty_generate(message[:metadata]), language: "json")
+              end
+
+              if message[:tool_calls] && !message[:tool_calls].empty?
+                tool_calls_section(message[:tool_calls])
+              end
+            end
           rescue StandardError => e
             %(<div class="metadata-error">Error rendering metadata: #{e.message}</div>)
           end

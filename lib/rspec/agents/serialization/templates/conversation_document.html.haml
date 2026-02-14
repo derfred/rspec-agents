@@ -8,22 +8,23 @@
     != render_base_scripts
     != render_extensions(:conversation_head_content)
 
-  %body
+  %body{:"x-data" => ""}
     != render_extensions(:conversation_body_start_content)
 
     .main-content
       .conversation-container
         != render_fragment
 
-    #metadata-sidebar.metadata-sidebar
+    #metadata-sidebar.metadata-sidebar{:"x-bind:class" => "{ 'visible': $store.suite.metadataVisible }"}
       .metadata-sidebar-header
-        %h3#metadata-header Message Metadata
-        %button.metadata-close-btn{onclick: "closeMetadata()", title: "Close"}
+        %h3#metadata-header{:"x-text" => "$store.suite.metadataRole || 'Message Metadata'"} Message Metadata
+        %button.metadata-close-btn{:"@click" => "$store.suite.closeMetadata()", title: "Close"}
           ×
       .metadata-sidebar-content#metadata-content
         - messages.each_with_index do |message, idx|
           - message_id = "#{example_id}_msg_#{idx}"
-          .metadata-item{id: "#{message_id}_metadata", data: {role: message[:role]}, style: "display: none;"}
+          .metadata-item{id: "#{message_id}_metadata", data: {role: message[:role]}, :"x-show" => "$store.suite.metadataMessageId === '#{message_id}'"}
             != render_extensions(:render_message_metadata, message, message_id)
 
     != render_extensions(:conversation_body_end_content)
+    != render_alpine_script

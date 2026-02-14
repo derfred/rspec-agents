@@ -2,6 +2,8 @@
 
 require "tilt"
 require_relative "presenters"
+require_relative "base_renderer"
+require_relative "ir"
 
 module RSpec
   module Agents
@@ -10,6 +12,10 @@ module RSpec
       #
       # Can be used standalone to render a full HTML document, or as a fragment
       # for embedding within TestSuiteRenderer.
+      #
+      # Extension hooks can return either:
+      # - A String (raw HTML) — rendered as-is (backward compatible)
+      # - An Array of IR node hashes — rendered to HTML via IR::HtmlRenderer
       #
       # @example Standalone rendering
       #   renderer = ConversationRenderer.new(
@@ -26,7 +32,7 @@ module RSpec
       #   )
       #   fragment = renderer.render_to_string(fragment: true)
       #
-      class ConversationRenderer
+      class ConversationRenderer < BaseRenderer
         attr_reader :conversation, :extensions, :run_data, :example_id
 
         # @param conversation [ConversationData] the conversation to render
@@ -64,19 +70,6 @@ module RSpec
           fragment ? render_fragment : render_document
         end
 
-        # Aggregate content from all extensions for a given hook.
-        #
-        # @param hook_name [Symbol] the hook method name
-        # @param args [Array] arguments to pass to the hook
-        # @return [String] concatenated output from all extensions
-        def render_extensions(hook_name, *args)
-          @extensions
-            .sort_by(&:priority)
-            .map { |ext| safe_call_hook(ext, hook_name, *args) }
-            .compact
-            .join("\n")
-        end
-
         # Collect x-bind:class expressions from all extensions for a message.
         #
         # @param message [MessagePresenter] the message
@@ -98,38 +91,52 @@ module RSpec
           @messages ||= flatten_conversation
         end
 
-        # Render base styles (CSS).
+        # Build rendered_extensions IR data for JSON serialization.
+        # Collects IR nodes from extension hooks for each message.
         #
-        # @return [String] style tag with base CSS
-        def render_base_styles
-          content = read_base_asset("_base_components.css")
-          return "" unless content
+        # @return [Hash] { message_metadata: { "msg_id" => { version: 1, nodes: [...] } } }
+        def build_rendered_extensions
+          message_metadata = {}
 
-          "<style>#{content}</style>"
-        end
+          messages.each_with_index do |message, idx|
+            message_id = "#{example_id}_msg_#{idx}"
+            nodes = collect_ir_nodes(:render_message_metadata, message, message_id)
+            next if nodes.empty?
 
-        # Render base scripts (JavaScript).
-        #
-        # @return [String] script tag with base JavaScript
-        def render_base_scripts
-          content = read_base_asset("_base_components.js")
-          return "" unless content
+            message_metadata[message_id] = IR::Nodes.envelope(nodes)
+          end
 
-          "<script>#{content}</script>"
+          { message_metadata: message_metadata }
         end
 
         private
 
-        def instantiate_extensions(extension_classes)
-          extension_classes.map { |klass| klass.new(self) }
+        # Collect IR nodes from all extensions for a given hook.
+        # Only extracts structured IR data (Array/Hash returns), ignoring Strings.
+        #
+        # @param hook_name [Symbol] the hook method name
+        # @param args [Array] arguments to pass to the hook
+        # @return [Array<Hash>] collected IR nodes
+        def collect_ir_nodes(hook_name, *args)
+          @extensions
+            .sort_by(&:priority)
+            .flat_map { |ext| extract_ir_from_hook(ext, hook_name, *args) }
+            .compact
         end
 
-        def safe_call_hook(extension, hook_name, *args)
+        # Extract IR nodes from a single extension hook call.
+        # Returns nil for String results (not IR).
+        def extract_ir_from_hook(extension, hook_name, *args)
           return nil unless extension.respond_to?(hook_name)
 
-          extension.public_send(hook_name, *args)
-        rescue StandardError => e
-          %(<div class="extension-error">Error in #{extension.class}: #{e.message}</div>)
+          result = extension.public_send(hook_name, *args)
+          case result
+          when Array then result
+          when Hash then [result]
+          else nil
+          end
+        rescue StandardError
+          nil
         end
 
         def flatten_conversation
@@ -151,10 +158,6 @@ module RSpec
           File.expand_path("templates/_conversation_fragment.html.haml", __dir__)
         end
 
-        def read_base_asset(name)
-          path = File.expand_path("templates/#{name}", __dir__)
-          File.exist?(path) ? File.read(path) : nil
-        end
       end
     end
   end

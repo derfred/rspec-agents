@@ -4,6 +4,8 @@ require "tilt"
 require "fileutils"
 require_relative "presenters"
 require_relative "conversation_renderer"
+require_relative "base_renderer"
+require_relative "ir"
 require_relative "run_data_aggregator"
 require_relative "extensions/core_extension"
 require_relative "extensions/copy_example_json_extension"
@@ -25,7 +27,7 @@ module RSpec
       #   )
       #   renderer.render
       #
-      class TestSuiteRenderer
+      class TestSuiteRenderer < BaseRenderer
         attr_reader :run_data, :extensions, :output_path
 
         # @param run_data [RunData] the test suite data to render
@@ -95,46 +97,11 @@ module RSpec
           ).render_fragment
         end
 
-        # Aggregate content from all extensions for a given hook.
-        #
-        # @param hook_name [Symbol] the hook method name
-        # @param args [Array] arguments to pass to the hook
-        # @return [String] concatenated output from all extensions
-        def render_extensions(hook_name, *args)
-          @extensions
-            .sort_by(&:priority)
-            .map { |ext| safe_call_hook(ext, hook_name, *args) }
-            .compact
-            .join("\n")
-        end
-
-        # Render base styles (CSS).
-        #
-        # @return [String] style tag with base CSS
-        def render_base_styles
-          content = read_base_asset("_base_components.css")
-          return "" unless content
-
-          "<style>#{content}</style>"
-        end
-
-        # Render base scripts (base components JS).
-        #
-        # Alpine.js is loaded last via render_alpine_script to ensure
-        # all alpine:init listeners are registered before Alpine starts.
-        #
-        # @return [String] script tag with base JavaScript
-        def render_base_scripts
-          components = read_base_asset("_base_components.js")
-          return "" unless components
-
-          "<script>#{components}</script>"
-        end
-
-        # Render Alpine.js script. Must be called after all other scripts
-        # so that alpine:init listeners are registered before Alpine starts.
+        # Render Alpine.js script. Raises if Alpine.js is missing since
+        # the test suite report requires it for navigation and interactivity.
         #
         # @return [String] script tag with Alpine.js
+        # @raise [RuntimeError] if Alpine.js asset is not found
         def render_alpine_script
           alpine = read_base_asset("_alpine.min.js")
           unless alpine
@@ -171,18 +138,6 @@ module RSpec
           ]
         end
 
-        def instantiate_extensions(extension_classes)
-          extension_classes.map { |klass| klass.new(self) }
-        end
-
-        def safe_call_hook(extension, hook_name, *args)
-          return nil unless extension.respond_to?(hook_name)
-
-          extension.public_send(hook_name, *args)
-        rescue StandardError => e
-          %(<div class="extension-error">Error in #{extension.class}: #{e.message}</div>)
-        end
-
         def prepared_examples
           @run_data.examples.values.map { |ex| ExamplePresenter.new(ex) }
         end
@@ -199,10 +154,6 @@ module RSpec
           end
         end
 
-        def read_base_asset(name)
-          path = File.expand_path("templates/#{name}", __dir__)
-          File.exist?(path) ? File.read(path) : nil
-        end
       end
     end
   end

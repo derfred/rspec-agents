@@ -174,6 +174,7 @@ module RSpec
           return unless run_data
 
           if @json_path
+            populate_rendered_extensions(run_data)
             FileUtils.mkdir_p(File.dirname(@json_path))
             Serialization::JsonFile.write(@json_path, run_data)
           end
@@ -185,6 +186,24 @@ module RSpec
           if @upload_url
             RunDataUploader.new(url: @upload_url, output: @output).upload(run_data)
           end
+        end
+
+        def populate_rendered_extensions(run_data)
+          extensions = [Serialization::Extensions::CoreExtension] +
+            RSpec::Agents.configuration.html_extensions
+          run_data.examples.each_value do |example|
+            next unless example.conversation
+
+            renderer = Serialization::ConversationRenderer.new(
+              example.conversation,
+              extensions: extensions,
+              example_id: example.stable_id || example.id
+            )
+            example.rendered_extensions = renderer.build_rendered_extensions
+          end
+        rescue StandardError => e
+          # Don't fail the run if IR generation fails
+          warn "Warning: Failed to generate rendered_extensions: #{e.message}"
         end
       end
     end

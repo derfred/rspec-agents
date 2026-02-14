@@ -10,3 +10,7 @@
 Gemfile.lock
 spec_status
 spec/playwright/node_modules/
+spec/playwright/fixtures/*.html
+spec/playwright/playwright-report/
+spec/playwright/test-results/
+package-lock.json

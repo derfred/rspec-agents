@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "tilt"
+require_relative "ir"
 
 module RSpec
   module Agents
@@ -11,18 +12,18 @@ module RSpec
       # conversation level (individual conversations) and suite level
       # (test suite reports).
       #
-      # @example Creating a custom extension
+      # Hooks can return either:
+      # - A String (raw HTML) — backward-compatible, rendered as-is
+      # - An Array of IR node hashes — rendered to HTML locally, serialized as
+      #   JSON for hosted mode
+      #
+      # @example Creating an extension with IR
       #   class MyExtension < RSpec::Agents::Serialization::Extension
-      #     def template_dir
-      #       File.expand_path("templates", __dir__)
-      #     end
-      #
-      #     def conversation_head_content
-      #       "<style>.my-class { color: red; }</style>"
-      #     end
-      #
-      #     def render_after_message(message, message_id)
-      #       render_template("_my_widget.html.haml", message: message)
+      #     def render_message_metadata(message, message_id)
+      #       build_ir do
+      #         timestamp(message[:timestamp]) if message[:timestamp]
+      #         section("Status", value: "ok", badge: "success")
+      #       end
       #     end
       #   end
       #
@@ -176,14 +177,38 @@ module RSpec
 
         protected
 
+        # Build an IR node tree using the builder DSL.
+        # Returns an Array of IR node hashes.
+        #
+        # @yield block evaluated in the context of IR::Builder
+        # @return [Array<Hash>] IR nodes
+        #
+        # @example
+        #   build_ir do
+        #     section("Timestamp", value: time.iso8601)
+        #     section("Tool Calls", badge: "2") do
+        #       tool_call("search", arguments: { q: "test" })
+        #     end
+        #   end
+        def build_ir(&block)
+          builder = IR::Builder.new(extension: self)
+          builder.instance_eval(&block)
+          builder.nodes
+        end
+
         # Render a template from this extension's template directory.
+        #
+        # Returns a RenderResult that behaves like a String (to_s/to_str)
+        # for backward compatibility. When used inside a build_ir block,
+        # the builder detects the RenderResult and auto-inserts a raw_html node.
         #
         # @param name [String] template filename (e.g., "_widget.html.haml")
         # @param locals [Hash] local variables to pass to the template
-        # @return [String] rendered HTML
+        # @return [IR::RenderResult] rendered HTML wrapped in a RenderResult
         def render_template(name, **locals)
           path = File.join(template_dir, name)
-          Tilt.new(path).render(self, **locals)
+          html = Tilt.new(path).render(self, **locals)
+          IR::RenderResult.new(html)
         end
 
         # Read an asset file from the template directory.
