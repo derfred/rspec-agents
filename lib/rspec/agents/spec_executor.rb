@@ -293,9 +293,18 @@ module RSpec
         # Register ourselves as a listener
         RSpec.configuration.reporter.register_listener(self, *NOTIFICATIONS)
 
+        # Inject event bus into thread-local so Conversation (via TestContext) publishes
+        # to the same bus that RunDataBuilder listens on. Without this, TestContext falls
+        # back to EventBus.instance (the singleton) which is a different bus, resulting
+        # in empty conversation turns in the JSON output.
+        Thread.current[:rspec_agents_event_bus] = @event_bus
+
         # Create runner and execute
         runner = RSpec::Core::Runner.new(options)
         exit_code = runner.run($stderr, null_output)
+
+        # Clean up thread-locals
+        Thread.current[:rspec_agents_event_bus] = nil
 
         # Build result
         Parallel::RunResult.new(
