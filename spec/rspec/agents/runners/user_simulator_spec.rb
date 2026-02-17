@@ -43,6 +43,18 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
     graph
   end
 
+  # Build a TurnExecutor wrapping the given agent with a fresh conversation
+  def build_turn_executor(agent)
+    conversation = RSpec::Agents::Conversation.new
+    RSpec::Agents::TurnExecutor.new(
+      agent:        agent,
+      conversation: conversation,
+      graph:        nil,
+      judge:        nil,
+      event_bus:    nil
+    )
+  end
+
   before do
     @agent_responses = []
     @agent_tool_calls = []
@@ -58,7 +70,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
 
     it "stores all dependencies" do
       runner = described_class.new(
-        agent:            mock_agent,
+        turn_executor:    build_turn_executor(mock_agent),
         llm:              mock_llm,
         judge:            judge,
         graph:            graph,
@@ -101,7 +113,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
 
     subject(:runner) do
       described_class.new(
-        agent:            mock_agent,
+        turn_executor:    build_turn_executor(mock_agent),
         llm:              mock_llm,
         judge:            judge,
         graph:            graph,
@@ -208,7 +220,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
         local_llm.queue_user_response("Find venues")
 
         local_runner = described_class.new(
-          agent:            local_agent,
+          turn_executor:    build_turn_executor(local_agent),
           llm:              local_llm,
           judge:            RSpec::Agents::Judge.new(llm: local_llm, criteria: criteria),
           graph:            trigger_graph,
@@ -253,7 +265,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
         })
 
         runner = described_class.new(
-          agent:            mock_agent,
+          turn_executor:    build_turn_executor(mock_agent),
           llm:              mock_llm,
           judge:            judge,
           graph:            graph,
@@ -289,7 +301,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
         })
 
         runner = described_class.new(
-          agent:            mock_agent,
+          turn_executor:    build_turn_executor(mock_agent),
           llm:              mock_llm,
           judge:            judge,
           graph:            graph,
@@ -332,7 +344,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
 
     subject(:runner) do
       described_class.new(
-        agent:            mock_agent,
+        turn_executor:    build_turn_executor(mock_agent),
         llm:              mock_llm,
         judge:            judge,
         graph:            graph,
@@ -460,7 +472,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
 
     subject(:runner) do
       described_class.new(
-        agent:            mock_agent,
+        turn_executor:    build_turn_executor(mock_agent),
         llm:              mock_llm,
         judge:            judge,
         graph:            graph,
@@ -477,7 +489,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
       local_config.max_turns 1
 
       runner = described_class.new(
-        agent:            mock_agent,
+        turn_executor:    build_turn_executor(mock_agent),
         llm:              mock_llm,
         judge:            judge,
         graph:            empty_graph,
@@ -497,7 +509,7 @@ RSpec.describe RSpec::Agents::Runners::UserSimulator do
       graph = build_graph({ terminal_topic => [] })
 
       runner = described_class.new(
-        agent:            mock_agent,
+        turn_executor:    build_turn_executor(mock_agent),
         llm:              mock_llm,
         judge:            judge,
         graph:            graph,

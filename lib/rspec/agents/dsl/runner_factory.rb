@@ -9,22 +9,15 @@ module RSpec
           @context = context
         end
 
-        # Build a turn executor for step-by-step test conversations
+        # Get the shared turn executor from the test context
         # @return [TurnExecutor]
-        def build_turn_executor
-          TurnExecutor.new(
-            agent:        @context.build_agent,
-            conversation: @context.conversation,
-            graph:        @context.topic_graph,
-            judge:        @context.build_judge(@context.build_llm),
-            event_bus:    @context.event_bus
-          )
+        def turn_executor
+          @context.turn_executor
         end
 
         # Build an agent proxy for assertions
-        # @param turn_executor [TurnExecutor]
         # @return [AgentProxy]
-        def build_agent_proxy(turn_executor)
+        def build_agent_proxy
           AgentProxy.new(
             turn_executor: turn_executor,
             judge:         @context.build_judge(@context.build_llm)
@@ -37,13 +30,12 @@ module RSpec
         def build_user_simulator(simulator_config)
           llm = @context.build_llm
           Runners::UserSimulator.new(
-            agent:            @context.build_agent,
+            turn_executor:    turn_executor,
             llm:              llm,
             judge:            @context.build_judge(llm),
             graph:            @context.topic_graph,
             simulator_config: simulator_config,
-            event_bus:        @context.event_bus,
-            conversation:     @context.conversation
+            event_bus:        @context.event_bus
           )
         end
       end

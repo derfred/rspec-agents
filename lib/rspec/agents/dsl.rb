@@ -232,14 +232,15 @@ module RSpec
         def ensure_turn_executor_initialized
           return if @turn_executor
 
-          factory = RunnerFactory.new(rspec_agents_test_context)
-          @turn_executor = factory.build_turn_executor
+          context = rspec_agents_test_context
+          factory = RunnerFactory.new(context)
+          @turn_executor = context.turn_executor
           @user_proxy = UserProxy.new(
-            context:        rspec_agents_test_context,
+            context:        context,
             turn_executor:  @turn_executor,
             runner_factory: factory
           )
-          @agent_proxy = factory.build_agent_proxy(@turn_executor)
+          @agent_proxy = factory.build_agent_proxy
         end
       end
 

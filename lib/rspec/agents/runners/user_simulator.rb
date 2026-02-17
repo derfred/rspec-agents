@@ -6,39 +6,33 @@ module RSpec
       class UserSimulator
         attr_reader :conversation, :results
 
-        # @param agent [Agents::Base] The agent under test
+        # @param turn_executor [TurnExecutor] Shared turn executor for executing turns
         # @param llm [LLM::Base] LLM for user simulation
         # @param judge [Judge] Judge for topic classification and invariant evaluation
         # @param graph [TopicGraph] The topic graph defining conversation flow
         # @param simulator_config [SimulatorConfig] Configuration for the simulator
         # @param event_bus [EventBus, nil] Optional event bus for emitting events
-        # @param conversation [Conversation, nil] Optional existing conversation to use
-        def initialize(agent:, llm:, judge:, graph:, simulator_config:, event_bus: nil, conversation: nil)
-          @agent        = agent
+        def initialize(turn_executor:, llm:, judge:, graph:, simulator_config:, event_bus: nil)
+          @turn_executor = turn_executor
           @llm          = llm
           @judge        = judge
           @graph        = graph
           @config       = simulator_config
           @event_bus    = event_bus
-          @conversation = conversation || Conversation.new(event_bus: @event_bus)
+          @conversation = @turn_executor.conversation
           @results      = SimulationResults.new
-
-          # Create turn executor for executing individual turns
-          # Note: We pass graph: nil because SimulatedRunner handles topic transitions itself
-          # (it needs to evaluate invariants on topic exit)
-          @turn_executor = TurnExecutor.new(
-            agent:        @agent,
-            conversation: @conversation,
-            graph:        nil,  # We handle topic classification ourselves
-            judge:        @judge,
-            event_bus:    @event_bus
-          )
         end
 
         # Run the simulated conversation
         #
         # @return [Conversation] The completed conversation
         def run
+          # Disable auto-classification on the shared turn executor;
+          # the simulator handles topic transitions itself (with invariant
+          # evaluation on topic exit).
+          saved_graph = @turn_executor.graph
+          @turn_executor.graph = nil
+
           @current_topic = @graph.initial_topic
           @conversation.set_topic(@current_topic)
           turns_taken             = 0
@@ -95,6 +89,9 @@ module RSpec
 
           # Emit simulation ended event
           emit_simulation_ended(turns_taken, termination_reason)
+
+          # Restore the graph on the shared turn executor
+          @turn_executor.graph = saved_graph
 
           @conversation
         end

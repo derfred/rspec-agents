@@ -108,6 +108,18 @@ module RSpec
           Judge.new(llm: llm, criteria: @criteria)
         end
 
+        # Shared turn executor for this test context.
+        # @return [TurnExecutor]
+        def turn_executor
+          @turn_executor ||= TurnExecutor.new(
+            agent:        build_agent,
+            conversation: @conversation,
+            graph:        @topic_graph,
+            judge:        build_judge(build_llm),
+            event_bus:    @event_bus
+          )
+        end
+
         # Merge additional simulator config (from test-level block)
         # @param override [SimulatorConfig]
         # @return [SimulatorConfig]

@@ -4,6 +4,7 @@ module RSpec
     # This is the core execution unit shared between scripted tests and simulated conversations
     class TurnExecutor
       attr_reader :current_response, :current_turn, :conversation
+      attr_accessor :graph
 
       # @param agent [Agents::Base] The agent under test
       # @param conversation [Conversation] The conversation to operate on
