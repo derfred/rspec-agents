@@ -4,8 +4,7 @@
 # Unified CLI for rspec-agents
 #
 # Usage:
-#   rspec-agents [run] [options] [paths...]     # Single-process (default)
-#   rspec-agents parallel [options] [paths...]  # Parallel with workers
+#   rspec-agents [options] [paths...]           # Run specs (use -w for parallel)
 #   rspec-agents render <json_file> [options]   # Render HTML from JSON
 #   rspec-agents worker                         # Internal: worker mode
 

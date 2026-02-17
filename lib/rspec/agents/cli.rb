@@ -6,23 +6,24 @@ module RSpec
   module Agents
     # Unified CLI for rspec-agents
     #
-    # Commands:
-    #   run      - Single-process execution (default)
-    #   parallel - Parallel execution with worker processes
-    #   worker   - Internal: run as a worker subprocess
+    # Subcommands:
+    #   render  - Generate HTML report from JSON file
+    #   worker  - Internal: run as a worker subprocess
+    #
+    # Without a subcommand, runs specs directly. Pass -w/--workers to
+    # enable parallel execution.
     #
     # @example Single process
     #   CLI.run(["spec/"])
-    #   CLI.run(["run", "spec/"])
     #
     # @example Parallel
-    #   CLI.run(["parallel", "-w", "4", "spec/"])
+    #   CLI.run(["-w", "4", "spec/"])
     #
     # @example Worker (internal)
     #   CLI.run(["worker"])
     #
     class CLI
-      COMMANDS = %w[run parallel worker render].freeze
+      SUBCOMMANDS = %w[worker render].freeze
 
       def self.run(argv)
         new(argv).run
@@ -33,159 +34,86 @@ module RSpec
       end
 
       def run
-        command, args = parse_command(@argv)
+        command, args = extract_subcommand(@argv)
 
         case command
-        when "run"
-          run_single(args)
-        when "parallel"
-          run_parallel(args)
         when "worker"
           run_worker(args)
         when "render"
           run_render(args)
         else
-          # Default to single-process run
-          run_single(@argv)
+          run_specs(args)
         end
       end
 
       private
 
-      def parse_command(argv)
+      def extract_subcommand(argv)
         return [nil, argv] if argv.empty?
 
         first = argv.first
-
-        # Auto-detect parallel mode if -w/--workers flag is present
-        if has_parallel_flag?(argv)
-          # If first arg is explicit command, consume it; otherwise keep all args
-          if COMMANDS.include?(first)
-            return ["parallel", argv[1..]]
-          else
-            return ["parallel", argv]
-          end
-        end
-
-        # Original logic for explicit commands or default to single-process
-        if COMMANDS.include?(first)
+        if SUBCOMMANDS.include?(first)
           [first, argv[1..]]
-        elsif first.start_with?("-")
-          # Flag, not a command - default to run
-          [nil, argv]
         else
-          # Path or unknown - default to run
           [nil, argv]
         end
       end
 
-      def has_parallel_flag?(argv)
-        argv.any? { |arg| arg == "-w" || arg.start_with?("--workers") }
-      end
-
       # =========================================================================
-      # Single-process mode
+      # Spec execution (single-process or parallel via -w)
       # =========================================================================
 
-      def run_single(args)
-        options = parse_single_options(args)
+      def run_specs(args)
+        options = parse_run_options(args)
 
-        runner = Runners::TerminalRunner.new(
-          output:     $stdout,
-          color:      options[:color],
-          json_path:  options[:json_path],
-          html_path:  options[:html_path],
-          upload_url: options[:upload_url]
-        )
-        runner.run(options[:paths])
-      end
-
-      def parse_single_options(args)
-        options = { paths: [], color: nil, json_path: nil, html_path: nil, upload_url: nil }
-
-        parser = OptionParser.new do |opts|
-          opts.banner = "Usage: rspec-agents [run] [options] [paths...]"
-          opts.separator ""
-          opts.separator "Run specs in a single process with terminal output."
-          opts.separator ""
-          opts.separator "Options:"
-
-          opts.on("--[no-]color", "Force color on/off (default: auto)") do |v|
-            options[:color] = v
-          end
-
-          opts.on("--ui MODE", [:interactive, :interleaved, :quiet],
-                  "Output mode (ignored in single-process mode)") do |_mode|
-            # Accepted for CLI compatibility with parallel mode, but ignored
-          end
-
-          opts.on("--json PATH", "Save JSON run data to file") do |path|
-            options[:json_path] = path
-          end
-
-          opts.on("--html PATH", "Render HTML report to path") do |path|
-            options[:html_path] = path
-          end
-
-          opts.on("--upload [URL]", "Upload run data to agents-studio (default: http://localhost:9292)") do |url|
-            options[:upload_url] = url || "http://localhost:9292"
-          end
-
-          opts.on("-h", "--help", "Show this help") do
-            puts opts
-            exit 0
-          end
+        if options[:workers]
+          runner = Runners::ParallelTerminalRunner.new(
+            worker_count: options[:workers],
+            fail_fast:    options[:fail_fast],
+            output:       $stdout,
+            color:        options[:color],
+            json_path:    options[:json_path],
+            html_path:    options[:html_path],
+            ui_mode:      options[:ui_mode],
+            upload_url:   options[:upload_url]
+          )
+        else
+          runner = Runners::TerminalRunner.new(
+            output:     $stdout,
+            color:      options[:color],
+            json_path:  options[:json_path],
+            html_path:  options[:html_path],
+            upload_url: options[:upload_url]
+          )
         end
 
-        remaining = parser.parse(args)
-        options[:paths] = remaining.empty? ? ["spec"] : remaining
-        options
-      end
-
-      # =========================================================================
-      # Parallel mode
-      # =========================================================================
-
-      def run_parallel(args)
-        options = parse_parallel_options(args)
-
-        runner = Runners::ParallelTerminalRunner.new(
-          worker_count: options[:workers],
-          fail_fast:    options[:fail_fast],
-          output:       $stdout,
-          color:        options[:color],
-          json_path:    options[:json_path],
-          html_path:    options[:html_path],
-          ui_mode:      options[:ui_mode],
-          upload_url:   options[:upload_url]
-        )
         runner.run(options[:paths])
       end
 
-      def parse_parallel_options(args)
+      def parse_run_options(args)
         options = {
-          workers:    4,
-          fail_fast:  false,
-          paths:      [],
-          color:      nil,
-          json_path:  nil,
-          html_path:  nil,
-          ui_mode:    nil,
+          paths:     [],
+          workers:   nil,
+          fail_fast: false,
+          color:     nil,
+          json_path: nil,
+          html_path: nil,
+          ui_mode:   nil,
           upload_url: nil
         }
 
         parser = OptionParser.new do |opts|
-          opts.banner = "Usage: rspec-agents parallel [options] [paths...]"
+          opts.banner = "Usage: rspec-agents [options] [paths...]"
           opts.separator ""
-          opts.separator "Run specs in parallel across multiple worker processes."
+          opts.separator "Run specs with terminal output. Pass -w to run in parallel."
           opts.separator ""
           opts.separator "Options:"
 
-          opts.on("-w", "--workers COUNT", Integer, "Number of workers (default: 4)") do |w|
+          opts.on("-w", "--workers COUNT", Integer, "Run in parallel with COUNT workers") do |w|
             options[:workers] = w
           end
 
-          opts.on("--fail-fast", "Stop on first failure") do
+          opts.on("--fail-fast", "Stop on first failure (parallel mode)") do
             options[:fail_fast] = true
           end
 
@@ -194,7 +122,7 @@ module RSpec
           end
 
           opts.on("--ui MODE", [:interactive, :interleaved, :quiet],
-                  "Output mode: interactive, interleaved, quiet (default: auto)") do |mode|
+                  "Output mode: interactive, interleaved, quiet (parallel mode, default: auto)") do |mode|
             options[:ui_mode] = mode
           end
 

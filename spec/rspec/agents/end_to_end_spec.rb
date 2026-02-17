@@ -117,10 +117,10 @@ RSpec.describe "End-to-end integration", type: :integration do
   end
 
   # ====================================================================
-  # Sequential mode (default `run` command)
+  # Sequential mode (default)
   # ====================================================================
   describe "sequential mode" do
-    let(:result)    { run_binary("run") }
+    let(:result)    { run_binary }
     let(:stdout)    { result[0] }
     let(:stderr)    { result[1] }
     let(:status)    { result[2] }
