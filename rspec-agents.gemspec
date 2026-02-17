@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   s.add_dependency "tilt", ">= 2.0"
   s.add_dependency "haml", ">= 6.0"
 
-  s.add_development_dependency "rspec", "~> 3.12"
+  s.add_development_dependency "rspec", "~> 3.0"
   s.add_development_dependency "async-rspec"
   s.add_development_dependency "rake"
 end
