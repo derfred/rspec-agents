@@ -4,6 +4,7 @@ require "async"
 require "rspec/core"
 require "stringio"
 require "digest"
+require_relative "backtrace_helper"
 
 module RSpec
   module Agents
