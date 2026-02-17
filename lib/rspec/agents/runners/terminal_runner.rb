@@ -29,16 +29,6 @@ module RSpec
           @json_path = json_path
           @html_path = html_path
           @upload_url = upload_url
-
-          # Set up terminal observer for conversation display
-          @event_bus = EventBus.instance
-          @event_bus.clear!
-          @terminal_observer = Observers::TerminalObserver.new(
-            output:    @output,
-            color:     @color,
-            indent:    2,
-            event_bus: @event_bus
-          )
         end
 
         # Run spec files sequentially
@@ -47,6 +37,15 @@ module RSpec
         # @return [Integer] Exit code (0 = success, 1 = failures)
         def run(files_or_args)
           executor = SequentialSpecExecutor.new
+
+          # Wire up terminal observer on the executor's event bus so conversation
+          # events are displayed without needing a separate bridging bus.
+          Observers::TerminalObserver.new(
+            output:    @output,
+            color:     @color,
+            indent:    2,
+            event_bus: executor.event_bus
+          )
 
           # Wire up event handling for terminal display
           executor.on_event { |type, event| handle_event(type, event) }
@@ -62,9 +61,6 @@ module RSpec
         private
 
         def handle_event(type, event)
-          # Publish to event bus for TerminalObserver (conversation events)
-          @event_bus.publish(event)
-
           # Handle display for RSpec lifecycle events
           case type
           when "SuiteStarted"

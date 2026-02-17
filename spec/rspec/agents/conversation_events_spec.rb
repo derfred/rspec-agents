@@ -2,9 +2,7 @@ require "spec_helper"
 require "rspec/agents"
 
 RSpec.describe "Conversation event emission" do
-  let(:event_bus) do
-    RSpec::Agents::EventBus.instance.tap(&:clear!)
-  end
+  let(:event_bus) { RSpec::Agents::EventBus.new }
   let(:events) { [] }
   let(:example_id) { "test-example-123" }
 

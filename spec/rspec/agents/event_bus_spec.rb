@@ -2,11 +2,45 @@ require "spec_helper"
 require "rspec/agents"
 
 RSpec.describe RSpec::Agents::EventBus do
-  # Use a fresh instance for each test instead of the singleton
-  let(:event_bus) do
-    # Clear singleton state before each test
-    described_class.instance.clear!
-    described_class.instance
+  let(:event_bus) { described_class.new }
+
+  describe ".current and .current=" do
+    after do
+      described_class.current = nil
+    end
+
+    it "raises when no bus is set" do
+      described_class.current = nil
+      expect { described_class.current }.to raise_error(RuntimeError, /No EventBus set/)
+    end
+
+    it "returns the bus set via .current=" do
+      bus = described_class.new
+      described_class.current = bus
+      expect(described_class.current).to equal(bus)
+    end
+
+    it "can be cleared by setting nil" do
+      described_class.current = described_class.new
+      described_class.current = nil
+      expect { described_class.current }.to raise_error(RuntimeError)
+    end
+  end
+
+  describe ".current?" do
+    after do
+      described_class.current = nil
+    end
+
+    it "returns false when no bus is set" do
+      described_class.current = nil
+      expect(described_class.current?).to be false
+    end
+
+    it "returns true when a bus is set" do
+      described_class.current = described_class.new
+      expect(described_class.current?).to be true
+    end
   end
 
   describe "#subscribe and #publish" do

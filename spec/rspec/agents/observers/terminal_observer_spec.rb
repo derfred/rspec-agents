@@ -4,9 +4,7 @@ require "stringio"
 
 RSpec.describe RSpec::Agents::Observers::TerminalObserver do
   let(:output) { StringIO.new }
-  let(:event_bus) do
-    RSpec::Agents::EventBus.instance.tap(&:clear!)
-  end
+  let(:event_bus) { RSpec::Agents::EventBus.new }
   let(:time) { Time.now }
   let(:example_id) { "test123" }
 

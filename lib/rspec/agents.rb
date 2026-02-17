@@ -44,7 +44,6 @@ require_relative "agents/conversation"
 # Event system
 require_relative "agents/events"
 require_relative "agents/event_bus"
-require_relative "agents/isolated_event_bus"
 require_relative "agents/observers/base"
 require_relative "agents/observers/terminal_observer"
 require_relative "agents/observers/rpc_notify_observer"

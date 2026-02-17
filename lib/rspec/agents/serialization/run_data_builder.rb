@@ -11,7 +11,7 @@ module RSpec
       class RunDataBuilder < Observers::Base
         attr_reader :run_data
 
-        def initialize(event_bus: EventBus.instance)
+        def initialize(event_bus:)
           @mutex = Mutex.new
           @current_turns = {}
           @run_data = nil

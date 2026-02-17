@@ -9,9 +9,9 @@ require "rspec/agents"
 # Run with: bin/rspec-parallel -w 4 spec/rspec_agents/parallel_execution_demo_spec.rb
 
 RSpec.describe "Parallel Execution Demo" do
-  # Get the event bus (either isolated from worker or singleton)
+  # Get the event bus for the current thread
   def event_bus
-    Thread.current[:rspec_agents_event_bus] || RSpec::Agents::EventBus.instance
+    RSpec::Agents::EventBus.current? ? RSpec::Agents::EventBus.current : @_demo_event_bus ||= RSpec::Agents::EventBus.new
   end
 
   # Create a conversation that emits events

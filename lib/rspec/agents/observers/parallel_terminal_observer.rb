@@ -29,7 +29,7 @@ module RSpec
         # @param output [IO] Output stream (default: $stdout)
         # @param color [Boolean, nil] Force color on/off (default: auto-detect)
         # @param event_bus [EventBus] Event bus to subscribe to
-        def initialize(output: $stdout, color: nil, event_bus: EventBus.instance)
+        def initialize(output: $stdout, color: nil, event_bus:)
           @output = output
           @color = color.nil? ? output.respond_to?(:tty?) && output.tty? : color
           @failures = []

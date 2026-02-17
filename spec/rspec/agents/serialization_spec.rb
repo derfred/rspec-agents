@@ -692,10 +692,8 @@ RSpec.describe RSpec::Agents::Serialization do
   end
 
   describe RSpec::Agents::Serialization::RunDataBuilder do
-    let(:event_bus) { RSpec::Agents::EventBus.instance }
+    let(:event_bus) { RSpec::Agents::EventBus.new }
     let(:builder) { described_class.new(event_bus: event_bus) }
-
-    before { event_bus.clear! }
 
     def example_started_event(example_id:, description:, full_description:, location:, time:, scenario: nil)
       RSpec::Agents::Events::ExampleStarted.new(

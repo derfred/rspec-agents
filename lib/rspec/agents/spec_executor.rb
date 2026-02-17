@@ -36,7 +36,7 @@ module RSpec
     class SpecExecutor
       include BacktraceHelper
 
-      attr_reader :run_data
+      attr_reader :run_data, :event_bus
 
       # @param fail_fast [Boolean] Stop on first failure
       def initialize(fail_fast: false)
@@ -50,7 +50,7 @@ module RSpec
         @cancelled = false
 
         # Set up event bus and run data builder
-        @event_bus = IsolatedEventBus.new
+        @event_bus = EventBus.new
         @run_data_builder = Serialization::RunDataBuilder.new(event_bus: @event_bus)
       end
 
@@ -293,18 +293,16 @@ module RSpec
         # Register ourselves as a listener
         RSpec.configuration.reporter.register_listener(self, *NOTIFICATIONS)
 
-        # Inject event bus into thread-local so Conversation (via TestContext) publishes
-        # to the same bus that RunDataBuilder listens on. Without this, TestContext falls
-        # back to EventBus.instance (the singleton) which is a different bus, resulting
-        # in empty conversation turns in the JSON output.
-        Thread.current[:rspec_agents_event_bus] = @event_bus
+        # Set event bus for the current thread so Conversation (via TestContext)
+        # publishes to the same bus that RunDataBuilder listens on.
+        EventBus.current = @event_bus
 
         # Create runner and execute
         runner = RSpec::Core::Runner.new(options)
         exit_code = runner.run($stderr, null_output)
 
         # Clean up thread-locals
-        Thread.current[:rspec_agents_event_bus] = nil
+        EventBus.current = nil
 
         # Build result
         Parallel::RunResult.new(

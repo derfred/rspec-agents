@@ -49,8 +49,8 @@ module RSpec
           @example_count = 0
           @failure_count = 0
 
-          # Create isolated EventBus for this worker (NOT the singleton)
-          @event_bus = IsolatedEventBus.new
+          # Create EventBus for this worker
+          @event_bus = EventBus.new
 
           # Set up RPC forwarding - all events go through this observer
           Observers::RpcNotifyObserver.new(
@@ -85,15 +85,15 @@ module RSpec
           # Register ourselves as a listener for RSpec lifecycle events
           RSpec.configuration.reporter.register_listener(self, *NOTIFICATIONS)
 
-          # Inject event bus into test context for Conversation to find
-          Thread.current[:rspec_agents_event_bus] = @event_bus
+          # Set event bus for the current thread so Conversation finds it
+          EventBus.current = @event_bus
 
           # Run specs
           runner = RSpec::Core::Runner.new(options)
           exit_code = runner.run($stderr, null_output)
 
           # Clean up thread-locals
-          Thread.current[:rspec_agents_event_bus] = nil
+          EventBus.current = nil
           Thread.current[:rspec_agents_example_id] = nil
 
           {

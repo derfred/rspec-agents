@@ -21,7 +21,7 @@ module RSpec
       #   end
       #
       class Base
-        def initialize(event_bus: EventBus.instance)
+        def initialize(event_bus:)
           event_bus.add_observer(self)
         end
 

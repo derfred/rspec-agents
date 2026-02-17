@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_dependency "async", ">= 2.0"
-  s.add_dependency "rspec-core", ">= 3.12"
+  s.add_dependency "rspec-core", ">= 3.0"
   s.add_dependency "tilt", ">= 2.0"
   s.add_dependency "haml", ">= 6.0"
 

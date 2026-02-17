@@ -6,10 +6,9 @@ require "tempfile"
 
 # Integration test: verifies that SequentialSpecExecutor correctly captures
 # conversation turns in run_data. This guards against a regression where
-# the executor's IsolatedEventBus was not injected into the thread-local,
-# causing Conversation to publish events to the singleton EventBus while
-# RunDataBuilder listened on a different (isolated) bus - resulting in
-# empty conversation turns in JSON output.
+# EventBus.current was not set before running specs, causing Conversation
+# to fail to find the event bus - resulting in empty conversation turns
+# in JSON output.
 RSpec.describe "Sequential executor conversation capture", type: :integration do
   let(:temp_dir) { Dir.mktmpdir("rspec_agents_seq_test") }
 
@@ -205,8 +204,8 @@ RSpec.describe "Sequential executor conversation capture", type: :integration do
       executor = RSpec::Agents::SequentialSpecExecutor.new
       executor.execute([spec_path])
 
-      expect(Thread.current[:rspec_agents_event_bus]).to be_nil,
-        "Thread-local event bus should be cleaned up after execution"
+      expect(RSpec::Agents::EventBus.current?).to be(false),
+        "EventBus.current should be cleaned up after execution"
     end
   end
 end

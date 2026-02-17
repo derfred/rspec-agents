@@ -1,11 +1,44 @@
-require "singleton"
+# frozen_string_literal: true
 
 module RSpec
   module Agents
-    # Central publish/subscribe hub for events
-    # Thread-safe with error isolation (observer errors never fail tests)
+    # Central publish/subscribe hub for events.
+    # Thread-safe with error isolation (observer errors never fail tests).
+    #
+    # Access the current thread's event bus via EventBus.current.
+    # Each thread (or worker process) gets its own independent instance.
+    #
+    # @example Setup in a runner/executor
+    #   EventBus.current = EventBus.new
+    #   # ... run specs ...
+    #   EventBus.current = nil  # cleanup
+    #
+    # @example Consuming in observers
+    #   EventBus.current.add_observer(self)
+    #
     class EventBus
-      include Singleton
+      # Get the event bus for the current thread.
+      # Raises if no bus has been set up.
+      #
+      # @return [EventBus]
+      def self.current
+        Thread.current[:rspec_agents_event_bus] or
+          raise "No EventBus set for current thread. Call EventBus.current = EventBus.new first."
+      end
+
+      # Set the event bus for the current thread.
+      #
+      # @param bus [EventBus, nil]
+      def self.current=(bus)
+        Thread.current[:rspec_agents_event_bus] = bus
+      end
+
+      # Check whether an event bus has been set for the current thread.
+      #
+      # @return [Boolean]
+      def self.current?
+        !Thread.current[:rspec_agents_event_bus].nil?
+      end
 
       def initialize
         @subscribers = Hash.new { |h, k| h[k] = [] }

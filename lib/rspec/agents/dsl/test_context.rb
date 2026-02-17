@@ -82,9 +82,7 @@ module RSpec
           @criteria         = collect_inherited(:criteria)
           @simulator_config = build_simulator_config
           @topic_graph      = nil
-          # Use thread-local event bus if available (set by HeadlessRunner in parallel mode)
-          # Otherwise use the singleton EventBus
-          @event_bus    = Thread.current[:rspec_agents_event_bus] || EventBus.instance
+          @event_bus    = EventBus.current? ? EventBus.current : EventBus.new
           @conversation = Conversation.new(event_bus: @event_bus)
         end
 
