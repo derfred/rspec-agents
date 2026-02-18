@@ -3,7 +3,7 @@
 require "async"
 require "fileutils"
 require_relative "../parallel/ui/ui_factory"
-require_relative "run_data_uploader"
+require_relative "streaming_run_data_uploader"
 
 module RSpec
   module Agents
@@ -94,6 +94,12 @@ module RSpec
           executor.on_event { |type, event| route_event_to_ui(type, event) }
           executor.on_progress { |c, t, f| @ui.on_progress(completed: c, total: t, failures: f) }
 
+          # Wire up streaming upload if --upload specified
+          if @upload_url
+            streaming_uploader = StreamingRunDataUploader.new(url: @upload_url, output: @output)
+            attach_streaming_upload(streaming_uploader, executor)
+          end
+
           # Start UI
           @ui.on_run_started(worker_count: @worker_count, example_count: examples.size)
           @ui.start_input_handling
@@ -114,8 +120,11 @@ module RSpec
               print_failed_examples_filter
             end
 
-            # Save outputs
-            save_outputs(executor.run_data) if @json_path || @html_path || @upload_url
+            # Finish streaming upload (blocks until queue drained)
+            streaming_uploader&.finish
+
+            # Save file outputs
+            save_outputs(executor.run_data) if @json_path || @html_path
 
             result&.success? ? 0 : 1
           ensure
@@ -204,6 +213,15 @@ module RSpec
           "#{COLORS[color]}#{text}#{COLORS[:reset]}"
         end
 
+        def attach_streaming_upload(uploader, executor)
+          executor.on_event do |type, _event|
+            uploader.start(executor.run_data) if type == "SuiteStarted"
+          end
+          executor.on_example_completed do |event, run_data|
+            uploader.upload_example(event, run_data)
+          end
+        end
+
         def save_outputs(run_data)
           return unless run_data
 
@@ -215,10 +233,6 @@ module RSpec
 
           if @html_path
             Serialization::TestSuiteRenderer.render(run_data, output_path: @html_path)
-          end
-
-          if @upload_url
-            RunDataUploader.new(url: @upload_url, output: @output).upload(run_data)
           end
         end
 
