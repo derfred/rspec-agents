@@ -55,6 +55,14 @@ module RSpec
         @conversation.current_topic
       end
 
+      # Get tool calls from the current response, optionally filtered by name
+      # @param name [Symbol, String, nil] Optional tool name to filter by
+      # @return [Array<ToolCall>]
+      def tool_calls(name = nil)
+        calls = @current_response&.tool_calls || []
+        name ? calls.select { |tc| tc.name == name.to_sym } : calls
+      end
+
       # Check if current turn is in expected topic
       #
       # @param expected_topic [Symbol] Expected topic name
