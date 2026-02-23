@@ -59,6 +59,19 @@ module RSpec
           "<script>#{alpine}</script>"
         end
 
+        # Apply metadata filters from all extensions in priority order.
+        # Each extension's filter_metadata receives the result of the previous one.
+        #
+        # @param metadata [Hash] the original message metadata
+        # @return [Hash] filtered metadata
+        def apply_metadata_filters(metadata)
+          return metadata unless metadata && @extensions
+
+          @extensions.sort_by(&:priority).reduce(metadata.dup) do |filtered, ext|
+            safe_call_filter(ext, filtered)
+          end
+        end
+
         private
 
         def instantiate_extensions(extension_classes)
@@ -88,6 +101,14 @@ module RSpec
           else
             result.to_s
           end
+        end
+
+        def safe_call_filter(extension, metadata)
+          return metadata unless extension.respond_to?(:filter_metadata)
+
+          extension.filter_metadata(metadata) || metadata
+        rescue StandardError
+          metadata
         end
 
         def read_base_asset(name)

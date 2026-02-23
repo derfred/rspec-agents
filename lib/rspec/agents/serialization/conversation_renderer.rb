@@ -92,7 +92,8 @@ module RSpec
         end
 
         # Build rendered_extensions IR data for JSON serialization.
-        # Collects IR nodes from extension hooks for each message.
+        # Collects IR nodes from extension hooks for each message,
+        # with footer nodes appended after metadata nodes.
         #
         # @return [Hash] { message_metadata: { "msg_id" => { version: 1, nodes: [...] } } }
         def build_rendered_extensions
@@ -101,9 +102,11 @@ module RSpec
           messages.each_with_index do |message, idx|
             message_id = "#{example_id}_msg_#{idx}"
             nodes = collect_ir_nodes(:render_message_metadata, message, message_id)
-            next if nodes.empty?
+            footer_nodes = collect_ir_nodes(:render_message_metadata_footer, message, message_id)
+            all_nodes = nodes + footer_nodes
+            next if all_nodes.empty?
 
-            message_metadata[message_id] = IR::Nodes.envelope(nodes)
+            message_metadata[message_id] = IR::Nodes.envelope(all_nodes)
           end
 
           { message_metadata: message_metadata }

@@ -25,6 +25,7 @@
           - message_id = "#{example_id}_msg_#{idx}"
           .metadata-item{id: "#{message_id}_metadata", data: {role: message[:role]}, :"x-show" => "$store.suite.metadataMessageId === '#{message_id}'"}
             != render_extensions(:render_message_metadata, message, message_id)
+            != render_extensions(:render_message_metadata_footer, message, message_id)
 
     != render_extensions(:conversation_body_end_content)
     != render_alpine_script

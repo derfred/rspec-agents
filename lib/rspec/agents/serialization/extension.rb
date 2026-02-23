@@ -122,6 +122,23 @@ module RSpec
         # @return [String, nil]
         def render_message_metadata(message, message_id); end
 
+        # Content rendered at the bottom of the metadata sidebar for each message.
+        # Use this for raw data dumps that should appear after visual representations.
+        #
+        # @param message [MessagePresenter] the message being rendered
+        # @param message_id [String] unique identifier for this message
+        # @return [String, nil]
+        def render_message_metadata_footer(message, message_id); end
+
+        # Filter metadata before rendering in the raw JSON block.
+        # Called for each extension in priority order. Return the filtered hash.
+        #
+        # @param metadata [Hash] the message metadata
+        # @return [Hash] filtered metadata (keys removed that are rendered elsewhere)
+        def filter_metadata(metadata)
+          metadata
+        end
+
         # =========================================================================
         # TEST SUITE-LEVEL HOOKS
         # Called by TestSuiteRenderer

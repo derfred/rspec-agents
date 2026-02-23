@@ -224,6 +224,7 @@
             - message_id = "#{example[:id]}_msg_#{idx}"
             .metadata-item{id: "#{message_id}_metadata", data: {role: message[:role]}, :"x-show" => "$store.suite.metadataMessageId === '#{message_id}'"}
               != render_extensions(:render_message_metadata, message, message_id)
+              != render_extensions(:render_message_metadata_footer, message, message_id)
 
     -# Modal (Alpine-driven)
     .modal{:"x-show" => "$store.modal.visible", :"x-bind:class" => "{ 'visible': $store.modal.visible }", :"@click.self" => "$store.modal.close()"}

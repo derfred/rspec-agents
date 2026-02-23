@@ -42,6 +42,10 @@ module RSpec
           # Render message metadata as IR nodes.
           # Returns an Array of IR node hashes (not HTML).
           #
+          # Renders timestamp and tool calls. The raw metadata JSON is rendered
+          # separately in render_message_metadata_footer so it appears at the
+          # bottom of the sidebar.
+          #
           # @param message [MessagePresenter] the message
           # @param message_id [String] unique identifier
           # @return [Array<Hash>, nil] IR nodes or nil if nothing to render
@@ -49,16 +53,33 @@ module RSpec
             build_ir do
               timestamp(message[:timestamp]) if message[:timestamp]
 
-              if message[:metadata] && !message[:metadata].empty?
-                section("Metadata", value: JSON.pretty_generate(message[:metadata]), language: "json")
-              end
-
               if message[:tool_calls] && !message[:tool_calls].empty?
                 tool_calls_section(message[:tool_calls])
               end
             end
           rescue StandardError => e
             %(<div class="metadata-error">Error rendering metadata: #{e.message}</div>)
+          end
+
+          # Render raw metadata JSON at the bottom of the sidebar.
+          # Applies filter_metadata hooks from all extensions before rendering,
+          # so extensions can remove keys they already render visually.
+          #
+          # @param message [MessagePresenter] the message
+          # @param message_id [String] unique identifier
+          # @return [Array<Hash>, nil] IR nodes or nil if nothing to render
+          def render_message_metadata_footer(message, message_id)
+            metadata = message[:metadata]
+            return nil unless metadata && !metadata.empty?
+
+            filtered = renderer.apply_metadata_filters(metadata)
+            return nil unless filtered && !filtered.empty?
+
+            build_ir do
+              section("Metadata", value: JSON.pretty_generate(filtered), language: "json")
+            end
+          rescue StandardError => e
+            %(<div class="metadata-error">Error rendering metadata footer: #{e.message}</div>)
           end
 
           # =========================================================================
